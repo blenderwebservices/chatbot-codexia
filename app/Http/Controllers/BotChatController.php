@@ -12,17 +12,47 @@ class BotChatController extends Controller
     {
         $request->validate([
             'message' => 'required|string',
-            'agent_id' => 'required|exists:ai_agents,id',
+            'agent_id' => 'nullable|exists:ai_agents,id',
+            'prompt' => 'nullable|string',
+            'history' => 'nullable|array',
         ]);
 
-        $agent = AiAgent::findOrFail($request->agent_id);
+        $systemPrompt = $request->input('prompt', 'Eres un asistente útil y cordial.');
+        
+        if ($request->filled('agent_id')) {
+            $agent = AiAgent::find($request->agent_id);
+            if ($agent) {
+                $systemPrompt = $agent->system_prompt ?? $systemPrompt;
+            }
+        }
 
-        $response = Ai::withSystemMessage($agent->system_prompt)
-            ->withModel($agent->model)
-            ->chat($request->message);
+        $historyText = "";
+        if ($request->filled('history')) {
+            foreach ($request->input('history') as $msg) {
+                $role = isset($msg['role']) && $msg['role'] == 'user' ? 'Usuario' : 'Asistente';
+                $content = $msg['content'] ?? '';
+                $historyText .= "{$role}: {$content}\n";
+            }
+        }
 
-        return response()->json([
-            'response' => $response,
-        ]);
+        $finalMessage = $request->message;
+        if (!empty($historyText)) {
+            $finalMessage = "Historial de la conversación:\n" . $historyText . "\n\nNuevo mensaje del Usuario:\n" . $request->message;
+        }
+
+        try {
+            $response = Ai::withSystemMessage($systemPrompt)->chat($finalMessage);
+
+            return response()->json([
+                'success' => true,
+                'response' => (string) $response,
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("BotChat Error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Hubo un error al procesar tu solicitud con la IA.',
+            ], 500);
+        }
     }
 }

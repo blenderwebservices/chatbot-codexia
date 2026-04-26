@@ -132,6 +132,9 @@
                     <button onclick="generateScript()" class="w-full py-4 rounded-xl gradient-bg font-bold mt-4">
                         Generar Script de Integración
                     </button>
+                    <button onclick="showDemoModal()" class="w-full py-4 rounded-xl glass border border-slate-700 text-red-500 font-bold mt-4 hover:bg-red-500/10 transition">
+                        Ver demo
+                    </button>
                 </div>
 
                 <!-- Preview Area -->
@@ -186,6 +189,31 @@
         </div>
     </div>
 
+    <!-- Demo Modal (Overlay) -->
+    <div id="demo-modal" class="fixed inset-0 bg-black/90 hidden flex-col items-center justify-center z-[60] p-4">
+        <div class="relative w-full max-w-6xl h-[90vh] bg-slate-50 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+            <!-- Modal Header -->
+            <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center text-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                    <h3 class="font-bold text-lg ml-4">Demo en vivo: Sitio de ejemplo</h3>
+                </div>
+                <button onclick="closeDemoModal()" class="text-slate-400 hover:text-red-500 transition font-bold text-2xl leading-none">&times;</button>
+            </div>
+            
+            <!-- Iframe Container for the Mini Site -->
+            <iframe id="demo-iframe" class="w-full flex-grow bg-white border-none"></iframe>
+            
+            <div class="p-4 bg-white border-t border-slate-200 text-center flex justify-center shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] z-10 relative">
+                 <button onclick="closeDemoModal()" class="px-8 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition shadow-lg">
+                    Cerrar Demo
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function updatePreview() {
             const name = document.getElementById('bot-name').value;
@@ -210,15 +238,120 @@
             const name = document.getElementById('bot-name').value;
             const color = document.getElementById('bot-color').value;
             const pos = document.getElementById('bot-pos').value;
+            const prompt = document.getElementById('bot-prompt').value.replace(/"/g, '&quot;');
             const domain = window.location.origin;
 
-            const code = `<script src="${domain}/bot.js" data-name="${name}" data-color="${color}" data-pos="${pos}"><\/script>`;
+            const code = `<script src="${domain}/bot.js" data-name="${name}" data-color="${color}" data-pos="${pos}" data-prompt="${prompt}"><\/script>`;
             document.getElementById('script-code').innerText = code;
             document.getElementById('modal').style.display = 'flex';
         }
 
         function closeModal() {
             document.getElementById('modal').style.display = 'none';
+        }
+
+        function showDemoModal() {
+            const name = document.getElementById('bot-name').value;
+            const color = document.getElementById('bot-color').value;
+            const pos = document.getElementById('bot-pos').value;
+            const prompt = document.getElementById('bot-prompt').value.replace(/"/g, '&quot;');
+            const domain = window.location.origin;
+
+            const scriptCode = `<script src="${domain}/bot.js" data-name="${name}" data-color="${color}" data-pos="${pos}" data-prompt="${prompt}"><\/script>`;
+            
+            const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Mini Sitio</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }<\/style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-black text-slate-900 tracking-tighter">Mi<span class="text-blue-600">Empresa</span></div>
+            <nav class="hidden md:flex gap-8 text-sm font-semibold text-slate-600">
+                <a href="#" class="hover:text-blue-600 transition">Inicio</a>
+                <a href="#" class="hover:text-blue-600 transition">Servicios</a>
+                <a href="#" class="hover:text-blue-600 transition">Casos de Éxito</a>
+                <a href="#" class="hover:text-blue-600 transition">Contacto</a>
+            </nav>
+            <button class="hidden md:block px-5 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition">Comenzar</button>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <section class="bg-white py-24 px-6 text-center border-b border-slate-200">
+            <div class="max-w-4xl mx-auto">
+                <div class="inline-block px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 font-semibold text-sm mb-6 border border-blue-100">
+                    Nueva integración de IA disponible
+                </div>
+                <h1 class="text-5xl md:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-tight">Revoluciona la <br/>atención al cliente</h1>
+                <p class="text-xl md:text-2xl text-slate-500 mb-12 leading-relaxed max-w-2xl mx-auto">Esta es una página de demostración. Observa cómo el widget de tu agente inteligente se integra perfectamente en un entorno real.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button class="px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 text-lg">Solicitar Demo</button>
+                    <button class="px-8 py-4 bg-white text-slate-700 font-semibold rounded-xl border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition text-lg">Ver Documentación</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-24 px-6 max-w-6xl mx-auto">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-16 text-slate-900">Por qué elegirnos</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-8">⚡</div>
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">Automatización Inteligente</h3>
+                    <p class="text-slate-500 leading-relaxed">Respuestas instantáneas y precisas a las preguntas frecuentes de tus clientes, 24/7 sin interrupciones.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition">
+                    <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mb-8">🎯</div>
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">Hiper-Personalización</h3>
+                    <p class="text-slate-500 leading-relaxed">Adapta el tono y estilo de la comunicación para que coincida perfectamente con la identidad de tu marca.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition">
+                    <div class="w-14 h-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center text-2xl mb-8">📈</div>
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">Aumento de Conversión</h3>
+                    <p class="text-slate-500 leading-relaxed">Guía a tus visitantes a través del embudo de ventas mediante interacciones conversacionales efectivas.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="bg-slate-900 py-24 px-6 text-center text-white">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-4xl font-bold mb-6">¿Listo para transformar tu negocio?</h2>
+                <p class="text-xl text-slate-400 mb-10">Únete a miles de empresas que ya utilizan nuestra plataforma para potenciar sus ventas y soporte.</p>
+                <button class="px-8 py-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-100 transition shadow-lg text-lg">Crear cuenta gratis</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 text-slate-500 py-12 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-xl font-black text-slate-900 tracking-tighter">Mi<span class="text-blue-600">Empresa</span></div>
+            <div class="text-sm">© 2026 MiEmpresa Inc. Todos los derechos reservados.</div>
+            <div class="flex gap-6 text-sm font-medium">
+                <a href="#" class="hover:text-slate-900 transition">Términos</a>
+                <a href="#" class="hover:text-slate-900 transition">Privacidad</a>
+            </div>
+        </div>
+    </footer>
+
+    ${scriptCode}
+</body>
+</html>
+            `;
+            
+            document.getElementById('demo-iframe').srcdoc = htmlContent;
+            document.getElementById('demo-modal').style.display = 'flex';
+        }
+
+        function closeDemoModal() {
+            document.getElementById('demo-modal').style.display = 'none';
+            document.getElementById('demo-iframe').srcdoc = ''; // Clear iframe content
         }
 
         function scrollToBuilder() {
