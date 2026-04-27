@@ -28,9 +28,9 @@ class ChatbotForm
                                     ->required()
                                     ->live(onBlur: true)
                                     ->maxLength(255),
-                                Select::make('ai_agent_id')
-                                    ->label('Agente IA (Cerebro)')
-                                    ->relationship('agent', 'name')
+                                Select::make('ai_provider_id')
+                                    ->label('Configuración IA (Cerebro)')
+                                    ->relationship('provider', 'name')
                                     ->required()
                                     ->searchable()
                                     ->preload(),

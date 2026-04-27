@@ -15,8 +15,8 @@ class ChatbotsTable
             ->columns([
                 TextColumn::make('name')
                     ->searchable(),
-                TextColumn::make('agent.name')
-                    ->label('Agente')
+                TextColumn::make('provider.name')
+                    ->label('Configuración IA')
                     ->sortable(),
                 ColorColumn::make('color'),
                 TextColumn::make('position')

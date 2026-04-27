@@ -9,15 +9,15 @@ class Chatbot extends Model
 {
     protected $fillable = [
         'name',
-        'ai_agent_id',
+        'ai_provider_id',
         'color',
         'position',
         'welcome_message',
         'is_active',
     ];
 
-    public function agent(): BelongsTo
+    public function provider(): BelongsTo
     {
-        return $this->belongsTo(AiAgent::class, 'ai_agent_id');
+        return $this->belongsTo(AiProvider::class, 'ai_provider_id');
     }
 }

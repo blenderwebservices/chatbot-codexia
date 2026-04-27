@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ai_agents', function (Blueprint $table) {
+        Schema::create('ai_providers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description')->nullable();
-            $table->text('system_prompt')->nullable();
-            $table->string('vendor')->nullable();
-            $table->string('model')->default('gemini-1.5-flash');
+            $table->foreignId('ai_vendor_id')->constrained()->onDelete('cascade');
             $table->string('api_key')->nullable();
             $table->string('base_url')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->foreignId('ai_model_id')->constrained()->onDelete('cascade');
+            $table->text('system_prompt')->nullable();
+            $table->text('roi_system_prompt')->nullable();
+            $table->text('raci_system_prompt')->nullable();
             $table->boolean('is_default')->default(false);
             $table->boolean('web_search_enabled')->default(false);
             $table->timestamps();
@@ -32,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ai_agents');
+        Schema::dropIfExists('ai_providers');
     }
 };

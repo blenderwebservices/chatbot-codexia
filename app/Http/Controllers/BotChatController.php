@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AiAgent;
+use App\Models\AiProvider;
+use App\Models\Chatbot;
 use Illuminate\Http\Request;
-use Laravel\Ai\Facades\Ai;
+use Illuminate\Support\Facades\Log;
+use function Laravel\Ai\agent;
 
 class BotChatController extends Controller
 {
@@ -12,18 +14,49 @@ class BotChatController extends Controller
     {
         $request->validate([
             'message' => 'required|string',
-            'agent_id' => 'nullable|exists:ai_agents,id',
+            'provider_id' => 'nullable|exists:ai_providers,id',
+            'chatbot_id' => 'nullable|exists:chatbots,id',
             'prompt' => 'nullable|string',
             'history' => 'nullable|array',
         ]);
 
-        $systemPrompt = $request->input('prompt', 'Eres un asistente útil y cordial.');
+        $providerRecord = null;
         
-        if ($request->filled('agent_id')) {
-            $agent = AiAgent::find($request->agent_id);
-            if ($agent) {
-                $systemPrompt = $agent->system_prompt ?? $systemPrompt;
-            }
+        if ($request->filled('chatbot_id')) {
+            $chatbot = Chatbot::with(['provider.vendor', 'provider.aiModel'])->find($request->chatbot_id);
+            $providerRecord = $chatbot?->provider;
+        } elseif ($request->filled('provider_id')) {
+            $providerRecord = AiProvider::with(['vendor', 'aiModel'])->find($request->provider_id);
+        } else {
+            $providerRecord = AiProvider::with(['vendor', 'aiModel'])->where('is_default', true)->first() ?? AiProvider::with(['vendor', 'aiModel'])->first();
+        }
+
+        if (!$providerRecord) {
+            return response()->json([
+                'success' => false,
+                'error' => 'No se encontró una configuración de IA válida.',
+            ], 404);
+        }
+
+        $systemPrompt = $providerRecord->system_prompt ?? $request->input('prompt', 'Eres un asistente útil y cordial.');
+
+        // Get driver and model keys from relationships
+        $driver = $providerRecord->vendor->key;
+        $model = $providerRecord->aiModel->key;
+
+        // Map "google" vendor key to "gemini" driver if necessary (laravel/ai specific)
+        if ($driver === 'google') {
+            $driver = 'gemini';
+        }
+
+        // Dynamically configure the provider with the API key from DB
+        if ($providerRecord->api_key) {
+            config([
+                "ai.providers.{$driver}" => [
+                    'driver' => $driver,
+                    'key' => $providerRecord->api_key,
+                ]
+            ]);
         }
 
         $historyText = "";
@@ -41,18 +74,34 @@ class BotChatController extends Controller
         }
 
         try {
-            $response = Ai::withSystemMessage($systemPrompt)->chat($finalMessage);
+            $aiAgent = agent($systemPrompt);
+            $response = $aiAgent->prompt(
+                $finalMessage,
+                provider: $driver,
+                model: $model
+            );
 
             return response()->json([
                 'success' => true,
                 'response' => (string) $response,
             ]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("BotChat Error: " . $e->getMessage());
+            Log::error("BotChat Error: " . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'error' => 'Hubo un error al procesar tu solicitud con la IA.',
+                'error' => 'Hubo un error al procesar tu solicitud con la IA: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function getConfig(Chatbot $chatbot)
+    {
+        return response()->json([
+            'success' => true,
+            'name' => $chatbot->name,
+            'color' => $chatbot->color,
+            'position' => $chatbot->position,
+            'welcome_message' => $chatbot->welcome_message,
+        ]);
     }
 }
